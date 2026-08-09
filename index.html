@@ -57,8 +57,8 @@
             texture.repeat.set(planeSize, planeSize);
 
             texture.generateMipmaps = false;
-            texture.minFilter = THREE.LinearFilter;
-            texture.magFilter = THREE.LinearFilter;
+            texture.minFilter = THREE.NearestFilter;
+            texture.magFilter = THREE.NearestFilter;
             texture.needsUpdate = true;
         });
 
@@ -87,7 +87,7 @@
 
         const playerTexture = new THREE.CanvasTexture(canvas);
         playerTexture.generateMipmaps = false;
-        playerTexture.minFilter = THREE.LinearFilter;
+        playerTexture.minFilter = THREE.NearestFilter;
 
         const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
         const player = new THREE.Sprite(playerMaterial);
