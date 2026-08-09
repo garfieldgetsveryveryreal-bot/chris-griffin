@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Billboard Game - Smooth Tank Controls</title>
+    <title>3D Billboard Game - Local Grass Texture</title>
     <style>
         body {
             margin: 0;
@@ -33,7 +33,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // 1. Scene, Camera, and Renderer Setup (Anti-aliasing disabled for performance)
+        // 1. Scene, Camera, and Renderer Setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
 
@@ -44,13 +44,12 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // 2. Create the Ground Plane with Looping Texture
+        // 2. Create the Ground Plane with Looping Local Texture ('grass.jpg')
         const planeSize = 200;
         const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
 
-        // Texture loader (Using link for testing; switch to 'grass.jpg' locally when ready)
         const textureLoader = new THREE.TextureLoader();
-        const grassTexture = textureLoader.load('https://images.unsplash.com/photo-1598880940371-c756e015cea4?q=80&w=512&auto=format&fit=crop', (texture) => {
+        const grassTexture = textureLoader.load('grass.jpg', (texture) => {
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(planeSize / 10, planeSize / 10);
@@ -68,7 +67,7 @@
 
         // 3. Create the 2D Billboard Player Placeholder
         const playerPosition = new THREE.Vector3(0, 1, 0);
-        let playerRotation = 0; // Angle in radians
+        let playerRotation = 0; 
         const playerSpeed = 0.12;
         const rotationSpeed = 0.04;
 
@@ -102,17 +101,16 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Handle Rotation (A and D / Left and Right Arrows)
+            // Handle Rotation (A and D)
             if (keys['a'] || keys['arrowleft']) playerRotation += rotationSpeed;
             if (keys['d'] || keys['arrowright']) playerRotation -= rotationSpeed;
 
-            // Handle Forward/Backward Movement (W and S / Up and Down Arrows)
+            // Handle Forward/Backward Movement (W and S)
             let moveDirection = 0;
             if (keys['w'] || keys['arrowup']) moveDirection = 1;
             if (keys['s'] || keys['arrowdown']) moveDirection = -1;
 
             if (moveDirection !== 0) {
-                // Move along the direction the player is facing
                 player.position.x += Math.sin(playerRotation) * playerSpeed * moveDirection;
                 player.position.z += Math.cos(playerRotation) * playerSpeed * moveDirection;
             }
@@ -122,12 +120,12 @@
             player.position.x = Math.max(-boundLimit, Math.min(boundLimit, player.position.x));
             player.position.z = Math.max(-boundLimit, Math.min(boundLimit, player.position.z));
 
-            // Calculate ideal camera position right behind the player's back based on rotation
+            // Calculate ideal camera position right behind the player's back
             const targetCamX = player.position.x - Math.sin(playerRotation) * 6;
             const targetCamY = player.position.y + 3;
             const targetCamZ = player.position.z - Math.cos(playerRotation) * 6;
 
-            // Smooth camera following (Lerp for smoothness)
+            // Smooth camera following (Lerp)
             camera.position.x += (targetCamX - camera.position.x) * 0.1;
             camera.position.y += (targetCamY - camera.position.y) * 0.1;
             camera.position.z += (targetCamZ - camera.position.z) * 0.1;
