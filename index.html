@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Billboard Game</title>
+    <title>3D Billboard Game - 128x128 Grass</title>
     <style>
         body {
             margin: 0;
@@ -44,7 +44,7 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // 2. Create the Ground Plane with Local Looping Texture ('grass.jpg')
+        // 2. Create the Ground Plane with 128x128 Looping Local Texture ('grass.jpg')
         const planeSize = 200;
         const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
 
@@ -53,12 +53,12 @@
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
             
-            // Cranked up to match a 1-to-1 ratio for a small texture to look crisp and detailed
-            texture.repeat.set(planeSize, planeSize);
+            // Adjusted for 128x128 texture scaling balance
+            texture.repeat.set(planeSize / 4, planeSize / 4);
 
             texture.generateMipmaps = false;
-            texture.minFilter = THREE.NearestFilter;
-            texture.magFilter = THREE.NearestFilter;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
             texture.needsUpdate = true;
         });
 
@@ -87,7 +87,7 @@
 
         const playerTexture = new THREE.CanvasTexture(canvas);
         playerTexture.generateMipmaps = false;
-        playerTexture.minFilter = THREE.NearestFilter;
+        playerTexture.minFilter = THREE.LinearFilter;
 
         const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
         const player = new THREE.Sprite(playerMaterial);
