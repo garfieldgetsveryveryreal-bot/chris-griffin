@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlit Flat Texture 3D Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #222;
+            font-family: sans-serif;
+        }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 5px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instructions">
+        <h3>Unlit Flat 3D Game</h3>
+        <p>Use <b>W, A, S, D</b> or <b>Arrow Keys</b> to move.</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // 1. Scene, Camera, and Renderer Setup (Anti-aliasing disabled)
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+
+        // (Lighting removed since we are using unlit materials!)
+
+        // 2. Create the Ground Plane with Looping Texture
+        const planeSize = 200;
+        const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
+
+        // Load "grass.jpg" texture
+        const textureLoader = new THREE.TextureLoader();
+        const grassTexture = textureLoader.load('grass.jpg', (texture) => {
+            // Configure texture wrapping for looping
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(planeSize / 5, planeSize / 5);
+
+            // Disable mipmaps to stop blurriness, keep texture filtering active (LinearFilter)
+            texture.generateMipmaps = false;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.needsUpdate = true;
+        });
+
+        // MeshBasicMaterial is unlit, meaning it won't be affected by darkness or shadows
+        const planeMaterial = new THREE.MeshBasicMaterial({ 
+            map: grassTexture 
+        });
+        
+        const ground = new THREE.Mesh(planeGeometry, planeMaterial);
+        ground.rotation.x = -Math.PI / 2; // Lay it flat
+        scene.add(ground);
+
+        // 3. Create the 2D Billboard Player Placeholder
+        const playerPosition = new THREE.Vector3(0, 1, 0);
+        const playerSpeed = 0.1;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ff4757';
+        ctx.fillRect(0, 0, 128, 128);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('PLAYER', 64, 70);
+
+        const playerTexture = new THREE.CanvasTexture(canvas);
+        playerTexture.generateMipmaps = false;
+        playerTexture.minFilter = THREE.LinearFilter;
+
+        const playerMaterial = new THREE.SpriteMaterial({ map: playerTexture });
+        const player = new THREE.Sprite(playerMaterial);
+        player.scale.set(2, 2, 1);
+        player.position.copy(playerPosition);
+        scene.add(player);
+
+        // 4. Input Handling
+        const keys = {};
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+        // 5. Game Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Handle player movement
+            if (keys['w'] || keys['arrowup']) player.position.z -= playerSpeed;
+            if (keys['s'] || keys['arrowdown']) player.position.z += playerSpeed;
+            if (keys['a'] || keys['arrowleft']) player.position.x -= playerSpeed;
+            if (keys['d'] || keys['arrowright']) player.position.x += playerSpeed;
+
+            // Keep player within bounds
+            const boundLimit = planeSize / 2 - 5;
+            player.position.x = Math.max(-boundLimit, Math.min(boundLimit, player.position.x));
+            player.position.z = Math.max(-boundLimit, Math.min(boundLimit, player.position.z));
+
+            // Update camera position to follow right behind the player's back
+            camera.position.x = player.position.x;
+            camera.position.y = player.position.y + 3;  
+            camera.position.z = player.position.z + 6;  
+
+            // Look slightly ahead of the player
+            camera.lookAt(player.position.x, player.position.y, player.position.z - 2);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
