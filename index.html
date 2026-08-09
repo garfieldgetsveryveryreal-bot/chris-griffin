@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unlit Flat Texture 3D Game</title>
+    <title>3D Billboard Game - Smooth Tank Controls</title>
     <style>
         body {
             margin: 0;
@@ -26,14 +26,14 @@
 <body>
 
     <div id="instructions">
-        <h3>Unlit Flat 3D Game</h3>
-        <p>Use <b>W, A, S, D</b> or <b>Arrow Keys</b> to move.</p>
+        <h3>3D Billboard Game</h3>
+        <p>Use <b>W / S</b> to move Forward / Backward.<br>Use <b>A / D</b> to Rotate.</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // 1. Scene, Camera, and Renderer Setup (Anti-aliasing disabled)
+        // 1. Scene, Camera, and Renderer Setup (Anti-aliasing disabled for performance)
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87ceeb);
 
@@ -44,39 +44,33 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // (Lighting removed since we are using unlit materials!)
-
         // 2. Create the Ground Plane with Looping Texture
         const planeSize = 200;
         const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
 
-        // Load "grass.jpg" texture
+        // Texture loader (Using link for testing; switch to 'grass.jpg' locally when ready)
         const textureLoader = new THREE.TextureLoader();
-        const grassTexture = textureLoader.load('grass.jpg', (texture) => {
-            // Configure texture wrapping for looping
+        const grassTexture = textureLoader.load('https://images.unsplash.com/photo-1598880940371-c756e015cea4?q=80&w=512&auto=format&fit=crop', (texture) => {
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(planeSize / 5, planeSize / 5);
+            texture.repeat.set(planeSize / 10, planeSize / 10);
 
-            // Disable mipmaps to stop blurriness, keep texture filtering active (LinearFilter)
             texture.generateMipmaps = false;
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.needsUpdate = true;
         });
 
-        // MeshBasicMaterial is unlit, meaning it won't be affected by darkness or shadows
-        const planeMaterial = new THREE.MeshBasicMaterial({ 
-            map: grassTexture 
-        });
-        
+        const planeMaterial = new THREE.MeshBasicMaterial({ map: grassTexture });
         const ground = new THREE.Mesh(planeGeometry, planeMaterial);
-        ground.rotation.x = -Math.PI / 2; // Lay it flat
+        ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
 
         // 3. Create the 2D Billboard Player Placeholder
         const playerPosition = new THREE.Vector3(0, 1, 0);
-        const playerSpeed = 0.1;
+        let playerRotation = 0; // Angle in radians
+        const playerSpeed = 0.12;
+        const rotationSpeed = 0.04;
 
         const canvas = document.createElement('canvas');
         canvas.width = 128;
@@ -108,24 +102,38 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Handle player movement
-            if (keys['w'] || keys['arrowup']) player.position.z -= playerSpeed;
-            if (keys['s'] || keys['arrowdown']) player.position.z += playerSpeed;
-            if (keys['a'] || keys['arrowleft']) player.position.x -= playerSpeed;
-            if (keys['d'] || keys['arrowright']) player.position.x += playerSpeed;
+            // Handle Rotation (A and D / Left and Right Arrows)
+            if (keys['a'] || keys['arrowleft']) playerRotation += rotationSpeed;
+            if (keys['d'] || keys['arrowright']) playerRotation -= rotationSpeed;
+
+            // Handle Forward/Backward Movement (W and S / Up and Down Arrows)
+            let moveDirection = 0;
+            if (keys['w'] || keys['arrowup']) moveDirection = 1;
+            if (keys['s'] || keys['arrowdown']) moveDirection = -1;
+
+            if (moveDirection !== 0) {
+                // Move along the direction the player is facing
+                player.position.x += Math.sin(playerRotation) * playerSpeed * moveDirection;
+                player.position.z += Math.cos(playerRotation) * playerSpeed * moveDirection;
+            }
 
             // Keep player within bounds
             const boundLimit = planeSize / 2 - 5;
             player.position.x = Math.max(-boundLimit, Math.min(boundLimit, player.position.x));
             player.position.z = Math.max(-boundLimit, Math.min(boundLimit, player.position.z));
 
-            // Update camera position to follow right behind the player's back
-            camera.position.x = player.position.x;
-            camera.position.y = player.position.y + 3;  
-            camera.position.z = player.position.z + 6;  
+            // Calculate ideal camera position right behind the player's back based on rotation
+            const targetCamX = player.position.x - Math.sin(playerRotation) * 6;
+            const targetCamY = player.position.y + 3;
+            const targetCamZ = player.position.z - Math.cos(playerRotation) * 6;
 
-            // Look slightly ahead of the player
-            camera.lookAt(player.position.x, player.position.y, player.position.z - 2);
+            // Smooth camera following (Lerp for smoothness)
+            camera.position.x += (targetCamX - camera.position.x) * 0.1;
+            camera.position.y += (targetCamY - camera.position.y) * 0.1;
+            camera.position.z += (targetCamZ - camera.position.z) * 0.1;
+
+            // Look at the player
+            camera.lookAt(player.position.x, player.position.y, player.position.z);
 
             renderer.render(scene, camera);
         }
